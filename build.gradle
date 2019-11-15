@@ -1,0 +1,66 @@
+
+
+buildscript {
+    repositories {
+     maven {
+        url "https://plugins.gradle.org/m2/"
+      }
+      mavenCentral()
+      
+    }
+    dependencies {
+        classpath('org.springframework.boot:spring-boot-gradle-plugin:2.2.1.RELEASE')
+        classpath('gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.22.1')
+	    classpath "io.spring.gradle:dependency-management-plugin:1.0.8.RELEASE"
+    }
+}
+
+
+plugins {
+	id 'org.springframework.boot' version '2.2.1.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+	id 'java'
+}
+
+
+sourceCompatibility = '1.8'
+targetCompatibility = 1.8
+
+group = 'usermanagement'
+
+bootJar {
+    baseName = 'usermanagement'
+    version =  '0.0.1'
+}
+
+apply plugin: 'com.palantir.docker'
+
+
+task unpack(type: Copy) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+docker {
+    name "${project.group}/${bootJar.baseName}"
+    copySpec.from(tasks.unpack.outputs).into("dependency")
+    buildArgs(['DEPENDENCY': "dependency"])
+}
+
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+}
+
+test {
+	useJUnitPlatform()
+}
